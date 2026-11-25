@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>TinyMCE hero prototypes</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+  </head>
+  <body>
+    <!-- 1440 px design frame. Scaled down to fit narrower windows, centred on wider ones. -->
+    <div class="frame" id="frame">
+      <header class="nav" aria-label="Main navigation (static in this prototype)">
+        <div class="nav-left">
+          <svg class="nav-logo" width="86" height="28" viewBox="0 0 86 28" role="img" aria-label="Tiny">
+            <path d="M74.2272 6.433L77.0412 14.3561L77.7115 16.7729L78.5148 14.3561L81.3288 6.433H85.7501L78.3678 27.0603L73.5981 28L75.5669 22.4131L69.8059 6.433H74.2272ZM17.7101 0C22.2654 0.02625 26.7664 3.81237 26.7664 9.32925C26.7664 9.32925 26.7944 10.731 26.7979 12.4268V13.1355C26.797 13.4549 26.7944 13.7786 26.7917 14.1006L26.7856 14.5819C26.7655 15.9364 26.7183 17.1973 26.6194 17.8535C25.9894 22.0684 22.8411 24.9812 18.5011 25.7197C14.5899 26.4845 12.2711 26.9272 11.5212 27.0751C11.2001 27.1425 9.78 27.3298 9.164 27.3298C4.39525 27.3298 0.0683744 23.7598 0.000999451 18.0005V17.0546L0.00187445 16.8919V16.5366C0.00362445 15.9163 0.00537445 15.1559 0.00887445 14.3736L0.0114995 13.902C0.0184995 12.4066 0.0316245 10.9147 0.0552495 10.2287C0.215374 6.027 3.12212 2.63112 8.65475 1.5435L15.7003 0.175C16.3434 0.053375 17.0539 0 17.7101 0ZM39.9281 2.135V6.433H43.9479V10.3267H39.9281V17.0415C39.9281 18.3575 40.9195 18.9219 41.5364 18.9219C42.064 18.9219 42.5435 18.8624 43.0326 18.7276L43.2776 18.6533L44.2156 21.742C43.8131 22.0106 42.6082 22.6818 40.3306 22.6818C38.0521 22.6818 35.694 20.9361 35.6406 17.9821C35.603 16.1236 35.6004 13.7541 35.6345 10.8736L35.6406 10.3267H32.8275V6.433H35.6406V2.968L39.9281 2.135ZM20.8977 4.9L10.1807 6.979V11.1676L5.89412 11.9989V22.4438L16.6111 20.363V16.1753L20.8977 15.3431V4.9ZM62.7053 6.02962C66.4371 6.00338 69.2669 8.94775 69.399 12.6595L69.4043 12.8783V22.4131H65.1168V13.5494C65.1027 11.536 63.6424 9.91113 61.6334 9.92425C59.6839 9.93738 57.975 11.4406 57.8849 13.3682L57.8814 13.5503V22.414H53.5939V6.43213H57.4789L57.6276 8.2985C58.8727 6.92825 60.7076 6.04187 62.7044 6.02875L62.7053 6.02962ZM50.9146 6.43213V22.4131H46.6271V6.433H50.9146V6.43213ZM16.6111 9.91988V16.1753L10.1807 17.4239V11.1676L16.6111 9.91988ZM50.9137 0V4.17637L46.6262 5.00938V0.833L50.9137 0Z" fill="currentColor" />
+          </svg>
+          <div class="nav-links">
+            <span class="nav-link">Products<svg class="chev" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.16667" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            <span class="nav-link">Developers<svg class="chev" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.16667" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            <span class="nav-link">Solutions<svg class="chev" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.16667" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            <span class="nav-link">Resources<svg class="chev" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.16667" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            <span class="nav-link">Pricing</span>
+          </div>
+        </div>
+        <div class="nav-right">
+          <span class="nav-link nav-login">Log In</span>
+          <span class="btn btn--secondary btn--sm">Contact Sales</span>
+          <span class="btn btn--primary btn--sm">Get started in minutes</span>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div class="hero-content">
+            <!-- Filled by src/hero.js. This fallback is what shows without JavaScript. -->
+            <h1 class="h1" id="h1">
+              <span class="h1-line h1-line--1">Your app. Our enterprise-ready</span>
+              <span class="h1-line h1-line--2"><span class="h1-fallback">editing engine.</span></span>
+            </h1>
+            <div class="sub">
+              <p class="lead" id="lead">Embed the TinyMCE rich text editor in minutes and extend it with 50+ plugins.<br />SOC 2 Type 2, HIPAA, GDPR and self-hosting are in place.</p>
+              <div class="ctas">
+                <span class="btn btn--primary btn--lg">Get started in minutes<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3.75 9H14.25" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" /><path d="M9 3.75L14.25 9L9 14.25" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                <span class="btn btn--secondary btn--lg">Talk to us</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="demo">
+            <div class="stage">
+              <div class="stage-glow stage-glow--a" aria-hidden="true"></div>
+              <div class="stage-glow stage-glow--b" aria-hidden="true"></div>
+              <div class="tabs">
+                <span class="tab">Essentials</span>
+                <span class="tab">Document Editor</span>
+                <span class="tab tab--active">Newsletter</span>
+                <span class="tab">Help Desk</span>
+              </div>
+              <div class="window">
+                <img class="window-toolbar" src="/assets/toolbar.svg" width="1200" height="43" alt="" />
+                <div class="window-rule"></div>
+                <img class="window-content" src="/assets/demo-newsletter@2x.png" width="1200" height="650" alt="TinyMCE editing a newsletter with merge tags and a saved template" />
+              </div>
+              <p class="stage-caption">Plugins in this demo: Templates · Merge Tags</p>
+            </div>
+          </div>
+
+          <div class="logos">
+            <h2 class="logos-title">Trusted by developers at the world’s leading companies</h2>
+            <div class="logo-row">
+              <div class="logo-cell"><img src="/assets/logo-google.svg" width="94" height="31" alt="Google" /></div>
+              <div class="logo-cell"><img src="/assets/logo-microsoft.svg" width="117" height="25" alt="Microsoft" /></div>
+              <div class="logo-cell"><img src="/assets/logo-nasdaq.svg" width="109" height="31" alt="Nasdaq" /></div>
+              <div class="logo-cell"><img src="/assets/logo-jpmorgan.svg" width="133" height="27" alt="J.P. Morgan" /></div>
+              <div class="logo-cell"><img src="/assets/logo-intuit.svg" width="104" height="21" alt="Intuit" /></div>
+            </div>
+            <div class="logo-row">
+              <div class="logo-cell"><img src="/assets/logo-atlassian.svg" width="150" height="19" alt="Atlassian" /></div>
+              <div class="logo-cell"><img src="/assets/logo-shopify.svg" width="112" height="35" alt="Shopify" /></div>
+              <div class="logo-cell"><img src="/assets/logo-oasis-lms.svg" width="113" height="22" alt="Oasis LMS" /></div>
+              <div class="logo-cell"><img src="/assets/logo-minuteme.svg" width="127" height="22" alt="MinuteMe" /></div>
+              <div class="logo-cell"><img class="logo-raster" src="/assets/logo-catapult@4x.png" width="106" height="22" alt="Catapult" /></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Everything below is a placeholder: section heights and backgrounds match the design, content is blocked out. -->
+        <section class="ph ph--tint" style="height: 1226px" aria-label="Why TinyMCE (placeholder)">
+          <div class="ph-head"><i class="sk sk--title" style="width: 300px"></i><i class="sk sk--line" style="width: 520px"></i><i class="sk sk--line" style="width: 360px"></i></div>
+          <div class="ph-stack">
+            <i class="sk sk--label"></i>
+            <div class="ph-row"><i class="sk-card" style="height: 196px"></i><i class="sk-card" style="height: 196px"></i><i class="sk-card" style="height: 196px"></i></div>
+            <i class="sk sk--label"></i>
+            <div class="ph-row"><i class="sk-card" style="height: 222px"></i><i class="sk-card" style="height: 222px"></i><i class="sk-card" style="height: 222px"></i></div>
+            <div class="ph-row"><i class="sk-card" style="height: 222px"></i><i class="sk-card" style="height: 222px"></i><i class="sk-card sk-card--cobalt" style="height: 222px"></i></div>
+          </div>
+        </section>
+
+        <section class="ph ph--white" style="height: 754px" aria-label="Works with your stack (placeholder)">
+          <div class="ph-head"><i class="sk sk--title" style="width: 460px"></i><i class="sk sk--line" style="width: 560px"></i><i class="sk sk--line" style="width: 400px"></i></div>
+          <div class="ph-grid">
+            <i></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </section>
+
+        <section class="ph ph--tint" style="height: 969px" aria-label="Premium plugins (placeholder)">
+          <div class="ph-head"><i class="sk sk--title" style="width: 600px"></i><i class="sk sk--line" style="width: 540px"></i><i class="sk sk--line" style="width: 380px"></i></div>
+          <div class="ph-tabs"><i class="is-active"></i><i></i><i></i><i></i><i></i></div>
+          <div class="ph-panel">
+            <div class="ph-panel-copy"><i class="sk sk--label"></i><i class="sk sk--title" style="width: 380px; height: 30px"></i><i class="sk sk--title" style="width: 240px; height: 30px"></i><i class="sk sk--line" style="width: 420px"></i><i class="sk sk--line" style="width: 340px"></i><i class="sk sk--label" style="width: 140px; margin-top: 12px"></i></div>
+            <i class="ph-panel-media"></i>
+          </div>
+        </section>
+
+        <section class="ph ph--tint" style="height: 344px" aria-label="TinyMCE in numbers (placeholder)">
+          <div class="ph-head ph-head--tight"><i class="sk sk--title" style="width: 380px"></i></div>
+          <div class="ph-stats"><b><i class="sk sk--num"></i><i class="sk sk--line"></i></b><b><i class="sk sk--num"></i><i class="sk sk--line"></i></b><b><i class="sk sk--num"></i><i class="sk sk--line"></i></b><b><i class="sk sk--num"></i><i class="sk sk--line"></i></b><b><i class="sk sk--num"></i><i class="sk sk--line"></i></b></div>
+        </section>
+
+        <section class="ph ph--white" style="height: 893px" aria-label="Customer stories (placeholder)">
+          <div class="ph-head"><i class="sk sk--title" style="width: 640px"></i><i class="sk sk--line" style="width: 520px"></i><i class="sk sk--line" style="width: 200px"></i></div>
+          <div class="ph-row"><i class="sk-card" style="height: 445px"></i><i class="sk-card" style="height: 445px"></i><i class="sk-card" style="height: 445px"></i></div>
+        </section>
+
+        <section class="ph ph--cobalt" style="height: 456px" aria-label="Closing call to action (placeholder)">
+          <div class="ph-head ph-head--center"><i class="sk sk--title" style="width: 620px; height: 56px"></i><i class="sk sk--title" style="width: 560px; height: 56px"></i>
+            <div class="ph-buttons"><i style="width: 190px"></i><i style="width: 130px" class="is-ghost"></i></div>
+          </div>
+        </section>
+
+        <footer class="ph ph--navy" style="height: 606px" aria-label="Footer (placeholder)">
+          <div class="ph-footer">
+            <div class="ph-col ph-col--brand"><i class="sk" style="width: 98px; height: 32px"></i><i class="sk sk--line" style="width: 110px"></i><i class="sk sk--line" style="width: 150px"></i></div>
+            <div class="ph-col"><i class="sk sk--line is-strong"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i></div>
+            <div class="ph-col"><i class="sk sk--line is-strong"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i></div>
+            <div class="ph-col"><i class="sk sk--line is-strong"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i></div>
+            <div class="ph-col"><i class="sk sk--line is-strong"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i><i class="sk sk--line"></i></div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- Version switcher: fixed to the window edge, outside the page frame, so it never moves the layout. -->
+    <nav class="switch" aria-label="Hero version">
+      <button type="button" class="switch-btn" data-version="v1" aria-pressed="true" title="Version 1 (press 1)">V1</button>
+      <button type="button" class="switch-btn" data-version="v2" aria-pressed="false" title="Version 2 (press 2)">V2</button>
+      <button type="button" class="switch-btn" data-version="v3" aria-pressed="false" title="Version 3 (press 3)">V3</button>
+      <span class="switch-rule" aria-hidden="true"></span>
+      <button type="button" class="switch-btn switch-btn--icon" id="replay" title="Replay the animation (press R)" aria-label="Replay the animation">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 9a6 6 0 1 0 1.9-4.38" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /><path d="M2.6 2.4v3.4H6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+    </nav>
+
+    <span class="measure" id="measure" aria-hidden="true"></span>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

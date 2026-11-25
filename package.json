@@ -1,0 +1,19 @@
+{
+  "name": "tiny-headings-animated",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource/fira-code": "^5.3.0",
+    "gsap": "^3.15.1",
+    "inter-ui": "3.19.3"
+  },
+  "devDependencies": {
+    "vite": "^8.3.8"
+  }
+}
