@@ -30,23 +30,32 @@ export const VERSIONS = {
 /* ------------------------------------------------------------------
    Options to compare. In all of them the whole headline is on the page from the
    first moment; there is never an empty space where the phrase goes.
-   The phrase loads as ordinary headline text, and then (`opening`):
+
+   `opening` – the phrase loads as ordinary headline text, and then:
      type  – it is selected, removed, and typed again on the pale highlight.
      style – it is selected and turns into the highlight. Nothing is typed.
-   Versions with several words then rotate them. `steady` decides what the rest
-   of the line does while they rotate:
-     false – the line stays centred, so the words before the phrase slide
-             sideways every time the new word is a different length.
-     true  – the line is centred once, for the first word, and then stays put.
-             Shorter or longer words only change where the line ends.
-   To try the steady line with the Type opening, add
-     type2: { opening: 'type', steady: true }
-   and a button with data-start="type2" in index.html.
+
+   The rest only matters on versions whose words rotate. A centred line has to
+   shift whenever the new word is a different length, which makes the words
+   before the phrase jump sideways. These settings trade that jump against how
+   far off-centre the line is allowed to sit:
+
+   `follow` – how much of the shift the line makes. 1 = stays perfectly centred
+              (biggest jump), 0 = never moves (line sits off-centre instead),
+              0.5 = moves half-way.
+   `anchor` – which word the line is centred for when it does not fully follow:
+              'first' = the first word, 'middle' = half-way between the shortest
+              and the longest word, so the error is split left and right.
+   `settle` – true = nothing moves while the word is selected and typed; the
+              line then drifts slowly to centre during the pause.
 ------------------------------------------------------------------- */
 export const STARTS = {
-  type: { opening: 'type', steady: false },
-  style: { opening: 'style', steady: false },
-  style2: { opening: 'style', steady: true },
+  type: { opening: 'type', follow: 1 },
+  style: { opening: 'style', follow: 1 },
+  style2: { opening: 'style', follow: 0, anchor: 'first' },
+  style3: { opening: 'style', follow: 0, anchor: 'middle' },
+  style4: { opening: 'style', follow: 0.5, anchor: 'middle' },
+  style5: { opening: 'style', follow: 1, settle: true },
 };
 
 /* ------------------------------------------------------------------
@@ -56,6 +65,7 @@ export const TIMING = {
   beforeStart: 0.7, // how long the plain headline sits before the caret arrives
   settle: 0.4, // "style" only: selection relaxing into the pale highlight
   hold: 2.3, // how long a finished word stays before the next swap
+  drift: 1.4, // "settle" options only: how long the line takes to drift back to centre
   select: 0.32, // selection sweeping across the word
   selectHold: 0.2, // word stays selected
   remove: 0.16, // selection collapsing (the word is deleted)
@@ -130,9 +140,14 @@ export class Hero {
     return STARTS[this.start] || STARTS.type;
   }
 
-  /** Space the line reserves for the phrase. Steady options always reserve the first word's width. */
+  /** Space the line reserves for the phrase. Anything less than the word's own width leaves the line off-centre. */
   lineWidth(word) {
-    return this.slotWidth(this.option.steady ? this.version.words[0] : word);
+    const { follow = 1, anchor = 'first' } = this.option;
+    const own = this.slotWidth(word);
+    if (follow >= 1) return own;
+    const all = this.version.words.map((w) => this.slotWidth(w));
+    const ref = anchor === 'middle' ? (Math.min(...all) + Math.max(...all)) / 2 : all[0];
+    return ref + (own - ref) * follow;
   }
 
   /** Clip value that shows the first `chars` characters of `word`. */
@@ -330,7 +345,8 @@ export class Hero {
     // 2. Remove: the selection collapses onto the caret, and the line settles to the new width.
     tl.addLabel('remove')
       .to(sel, { '--sel-r': '100%', duration: T.remove, ease: 'power2.in' }, 'remove')
-      .to(slot, { width: this.lineWidth(toWord), duration: 0.6, ease: 'power3.inOut' }, 'remove');
+      .to({}, { duration: 0.01 }, 'remove');
+    if (!this.option.settle) tl.to(slot, { width: this.lineWidth(toWord), duration: 0.6, ease: 'power3.inOut' }, 'remove');
 
     // 3. Blink: the caret waits with the logo flag on top.
     tl.addLabel('blink', `remove+=${T.remove}`).fromTo(
@@ -365,6 +381,13 @@ export class Hero {
     }
 
     tl.call(() => this.startBlink(), null, t + 0.15);
+    // "settle": the line only re-centres now, slowly, once the typing is over.
+    if (this.option.settle) {
+      tl.call(() => {
+        const drift = gsap.to(slot, { width: this.slotWidth(toWord), duration: TIMING.drift, ease: 'sine.inOut', onComplete: () => this.live.delete(drift) });
+        this.live.add(drift);
+      }, null, t + 0.3);
+    }
     return tl;
   }
 

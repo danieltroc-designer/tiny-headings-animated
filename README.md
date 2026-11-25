@@ -24,7 +24,7 @@ npm run dev
 ## Using the prototype
 
 - The **V1 / V2 / V3** buttons on the right edge switch versions. They float over the page and never move the layout.
-- **Start** picks one of three options for the headline: **Type**, **Style** or **Style 2** (see below). The choice is remembered in the browser.
+- **Start** picks one of six options for the headline: **Type**, **Style** and **Style 2** to **5** (see below). The choice is remembered in the browser.
 - The round arrow plays the headline again from the start.
 - Keyboard: `1`, `2`, `3` switch versions, `S` cycles through the start options, `R` plays again.
 - The address ends in `#v1`, `#v2` or `#v3`, so a link opens on a specific version.
@@ -49,11 +49,17 @@ The motion is inside the headline's last phrase, built with [GSAP](https://gsap.
 
 Both end on the frame drawn in Figma. V3 then keeps rotating its last word (governance, security, accessibility, support, self-hosting) with the Type sequence: select → remove → blink → type, with a pause of a little over two seconds on each word.
 
-**Style 2** — a steadier V3
+**Style 2 to 5** — steadier takes on V3
 
-With Type and Style the line stays centred, so every time the new word is a different length, "Enterprise-grade" slides sideways (up to about 65 px between "accessibility." and "support.").
+With Type and Style the line stays centred, so every time the new word is a different length, "Enterprise-grade" jumps sideways, by up to 65 px. A centred line cannot avoid this, so the other options trade the jump against how far off-centre the line may sit. They all open like Style, and they only differ on V3.
 
-Style 2 opens like Style, but the line is centred once, for the first word, and then stays put. "Enterprise-grade" never moves; shorter or longer words only change where the line ends. The cost is that the line is no longer exactly centred on the shorter words: with "support." it sits about 59 px left of centre. On V1 and V2, which have one phrase, Style 2 is identical to Style.
+| Option | What the line does | Biggest jump | Furthest off-centre |
+| --- | --- | --- | --- |
+| Type, Style | Always centred | 65 px | 0 |
+| Style 2 | Never moves; centred for the first word | 0 | 59 px (always to the left) |
+| Style 3 | Never moves; centred between the shortest and longest word | 0 | 33 px (either way; 26 px at load) |
+| Style 4 | Moves half-way | 33 px | 17 px (13 px at load) |
+| Style 5 | Still while the word is typed, then drifts to centre over 1.4 s | 0, then a slow 65 px drift | 0 once settled |
 
 ### Where to change things
 
@@ -63,7 +69,7 @@ Style 2 opens like Style, but the line is centred once, for the first word, and 
 | Speed of each step, pause between swaps | `TIMING` in `src/hero.js` |
 | The Type sequence and the word swap | `retype()` and `replace()` in `src/hero.js` |
 | The Style sequence | `restyle()` in `src/hero.js` |
-| The options, and which ones keep the line steady | `STARTS` in `src/hero.js` |
+| The options, and how much each lets the line move | `STARTS` in `src/hero.js` |
 | Colours, sizes, layout | `src/styles.css` |
 
 ## Notes
