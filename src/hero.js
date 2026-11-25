@@ -12,12 +12,6 @@ export const VERSIONS = {
     lead: 'Embed the TinyMCE rich text editor in minutes and extend it with 50+ plugins.<br>SOC&nbsp;2&nbsp;Type&nbsp;2, HIPAA, GDPR and self-hosting are in place.',
   },
   v2: {
-    line1: 'Your editor. Our engine.',
-    prefix: 'Enterprise-grade',
-    words: ['governance.', 'security.', 'accessibility.', 'support.', 'self-hosting.'],
-    lead: 'Embeddable rich text editor in minutes, 50+ plugins out of the box. Every paste comes out as clean HTML, with SOC&nbsp;2&nbsp;Type&nbsp;2, HIPAA and GDPR behind it.',
-  },
-  v3: {
     line1: 'You build the app.',
     prefix: 'We bring',
     words: ['the editor.'],
@@ -25,17 +19,35 @@ export const VERSIONS = {
     lead: 'A rich text editor in a few lines of code, with 400+ APIs to make it yours.<br>SOC&nbsp;2&nbsp;Type&nbsp;2, GDPR and self-hosting come with it, so your engineers stay on your product.',
     leadWidth: 800,
   },
+  v3: {
+    line1: 'Your editor. Our engine.',
+    prefix: 'Enterprise-grade',
+    words: ['governance.', 'security.', 'accessibility.', 'support.', 'self-hosting.'],
+    lead: 'Embeddable rich text editor in minutes, 50+ plugins out of the box. Every paste comes out as clean HTML, with SOC&nbsp;2&nbsp;Type&nbsp;2, HIPAA and GDPR behind it.',
+  },
 };
 
 /* ------------------------------------------------------------------
-   Two options to compare. In both, the whole headline is on the page from the
+   Options to compare. In all of them the whole headline is on the page from the
    first moment; there is never an empty space where the phrase goes.
-   The phrase loads as ordinary headline text, and then:
+   The phrase loads as ordinary headline text, and then (`opening`):
      type  – it is selected, removed, and typed again on the pale highlight.
      style – it is selected and turns into the highlight. Nothing is typed.
-   Versions with several words then rotate them the same way in both options.
+   Versions with several words then rotate them. `steady` decides what the rest
+   of the line does while they rotate:
+     false – the line stays centred, so the words before the phrase slide
+             sideways every time the new word is a different length.
+     true  – the line is centred once, for the first word, and then stays put.
+             Shorter or longer words only change where the line ends.
+   To try the steady line with the Type opening, add
+     type2: { opening: 'type', steady: true }
+   and a button with data-start="type2" in index.html.
 ------------------------------------------------------------------- */
-export const STARTS = ['type', 'style'];
+export const STARTS = {
+  type: { opening: 'type', steady: false },
+  style: { opening: 'style', steady: false },
+  style2: { opening: 'style', steady: true },
+};
 
 /* ------------------------------------------------------------------
    Timing, in seconds. Tune the feel here.
@@ -114,6 +126,15 @@ export class Hero {
     return this.pillWidth(word) + CARET_GAP + CARET_W;
   }
 
+  get option() {
+    return STARTS[this.start] || STARTS.type;
+  }
+
+  /** Space the line reserves for the phrase. Steady options always reserve the first word's width. */
+  lineWidth(word) {
+    return this.slotWidth(this.option.steady ? this.version.words[0] : word);
+  }
+
   /** Clip value that shows the first `chars` characters of `word`. */
   reveal(word, chars = word.length) {
     const w = this.widths(word)[chars];
@@ -180,7 +201,7 @@ export class Hero {
       }
     } else {
       this.setPlain(first);
-      const tl = this.start === 'style' ? this.restyle(first) : this.retype(first);
+      const tl = this.option.opening === 'style' ? this.restyle(first) : this.retype(first);
       tl.eventCallback('onComplete', () => {
         this.live.delete(tl);
         this.loop();
@@ -193,7 +214,7 @@ export class Hero {
   setRest(word) {
     const { slot, pill, blue, ink, sel, selText, caret } = this.el;
     const pw = this.pillWidth(word);
-    gsap.set(slot, { width: this.slotWidth(word) });
+    gsap.set(slot, { width: this.lineWidth(word) });
     gsap.set(pill, { width: pw, autoAlpha: 1 });
     blue.textContent = word;
     gsap.set(blue, { '--reveal': this.reveal(word) });
@@ -309,7 +330,7 @@ export class Hero {
     // 2. Remove: the selection collapses onto the caret, and the line settles to the new width.
     tl.addLabel('remove')
       .to(sel, { '--sel-r': '100%', duration: T.remove, ease: 'power2.in' }, 'remove')
-      .to(slot, { width: this.slotWidth(toWord), duration: 0.6, ease: 'power3.inOut' }, 'remove');
+      .to(slot, { width: this.lineWidth(toWord), duration: 0.6, ease: 'power3.inOut' }, 'remove');
 
     // 3. Blink: the caret waits with the logo flag on top.
     tl.addLabel('blink', `remove+=${T.remove}`).fromTo(

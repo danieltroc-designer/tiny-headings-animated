@@ -25,7 +25,7 @@ window.addEventListener('resize', fit);
 let start = 'type';
 try {
   const saved = localStorage.getItem('hero-start');
-  if (STARTS.includes(saved)) start = saved;
+  if (saved in STARTS) start = saved;
 } catch {
   /* storage is a convenience only */
 }
@@ -56,7 +56,7 @@ function show(id = current) {
 }
 
 function setStart(mode) {
-  if (!STARTS.includes(mode) || mode === hero.start) return;
+  if (!(mode in STARTS) || mode === hero.start) return;
   hero.start = mode;
   try {
     localStorage.setItem('hero-start', mode);
@@ -73,7 +73,10 @@ window.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const key = e.key.toLowerCase();
   if (['1', '2', '3'].includes(key)) show(`v${key}`);
-  if (key === 's') setStart(hero.start === 'type' ? 'style' : 'type');
+  if (key === 's') {
+    const names = Object.keys(STARTS);
+    setStart(names[(names.indexOf(hero.start) + 1) % names.length]);
+  }
   if (key === 'r') show();
 });
 window.addEventListener('hashchange', () => location.hash.slice(1) !== current && show(location.hash.slice(1)));
