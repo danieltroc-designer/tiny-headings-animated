@@ -9,25 +9,27 @@ export const VERSIONS = {
     line1: 'Your app. Our enterprise-ready',
     prefix: '',
     words: ['editing engine.'],
-    lead: 'Embed the TinyMCE rich text editor in minutes and extend it with 50+ plugins.<br>SOC 2 Type 2, HIPAA, GDPR and self-hosting are in place.',
+    lead: 'Embed the TinyMCE rich text editor in minutes and extend it with 50+ plugins.<br>SOC&nbsp;2&nbsp;Type&nbsp;2, HIPAA, GDPR and self-hosting are in place.',
   },
   v2: {
     line1: 'Your editor. Our engine.',
     prefix: 'Enterprise-grade',
     words: ['governance.', 'security.', 'accessibility.', 'support.', 'self-hosting.'],
-    lead: 'Embeddable rich text editor in minutes, 50+ plugins out of the box. Every paste comes out as clean HTML, with SOC 2 Type 2, HIPAA and GDPR behind it.',
+    lead: 'Embeddable rich text editor in minutes, 50+ plugins out of the box. Every paste comes out as clean HTML, with SOC&nbsp;2&nbsp;Type&nbsp;2, HIPAA and GDPR behind it.',
   },
   v3: {
     line1: 'You build the app.',
     prefix: 'We bring',
     words: ['the editor.'],
-    lead: 'A rich text editor in a few lines of code, with 400+ APIs to make it yours. SOC 2 Type 2, GDPR and self-hosting come with it, so your engineers stay on your product.',
+    // The second sentence is 770 px wide, so this paragraph gets a wider box than the 720 px in Figma.
+    lead: 'A rich text editor in a few lines of code, with 400+ APIs to make it yours.<br>SOC&nbsp;2&nbsp;Type&nbsp;2, GDPR and self-hosting come with it, so your engineers stay on your product.',
+    leadWidth: 800,
   },
 };
 
 /* ------------------------------------------------------------------
    How the headline opens. Both end on the frame drawn in Figma.
-     type  – the phrase is missing: the caret blinks, types it, then selects it.
+     type  – the phrase is missing: the caret blinks, then types it on the highlight.
      style – the phrase is already written: it is selected and restyled, no typing.
    V2 swaps its words the same way after either opening.
 ------------------------------------------------------------------- */
@@ -48,7 +50,6 @@ export const TIMING = {
   blinks: 2, // how many times the caret blinks before typing
   key: 0.062, // average time per typed character
   keyJitter: 0.03, // random variation per character
-  afterType: 0.3, // "type" start: pause between the last character and the selection
   hold: 2.3, // how long a finished word stays before the next swap (V2)
 };
 
@@ -60,8 +61,6 @@ const CARET_W = 3;
 /* Browsers trim the (negative) letter-spacing after the last character and Figma does not.
    Adding it back keeps the pill the exact width drawn in Figma: 64 px × 2.5%. */
 const TRAIL = 1.6;
-/* While plain text is being typed (no pill yet) the caret sits this close to the last character. */
-const TYPE_GAP = 4;
 
 const FLAG = `<svg class="caret-flag" viewBox="0 0 17 17" aria-hidden="true"><path d="M11.2347 0C14.1246 0.0163268 16.98 2.37143 16.98 5.80309C16.98 5.80309 16.9978 6.67505 17 7.72983V8.17071C16.9995 8.36937 16.9978 8.57075 16.9961 8.77105L16.9922 9.07042C16.9795 9.91294 16.9495 10.6973 16.8867 11.1055C16.4871 13.7273 14.4898 15.5392 11.7365 15.9985C9.25521 16.4742 7.7842 16.7496 7.30847 16.8416C7.10474 16.8835 6.20381 17 5.81301 17C2.78773 17 0.0427414 14.7794 0 11.1969V10.6085L0.000554162 10.5073V10.2863C0.00166596 9.90043 0.00277435 9.42745 0.00499455 8.94088L0.00666059 8.64749C0.011101 7.71732 0.0194276 6.78932 0.0344148 6.36262C0.136 3.74898 1.98006 1.63664 5.48995 0.960109L9.95965 0.108854C10.3677 0.033201 10.8184 0 11.2347 0Z"/></svg>`;
 
@@ -158,6 +157,7 @@ export class Hero {
         </span></span>
       </span>`;
     this.lead.innerHTML = v.lead;
+    this.lead.style.width = v.leadWidth ? `${v.leadWidth}px` : '';
 
     const q = (s) => this.h1.querySelector(s);
     this.el = {
@@ -210,8 +210,9 @@ export class Hero {
   /** "type" start: the space for the phrase is reserved, but nothing is written yet. */
   setEmpty(word) {
     this.prime(word);
-    gsap.set(this.el.ink, { autoAlpha: 1, '--reveal': '0px' });
-    gsap.set(this.el.caret, { x: PAD_L - CARET_W });
+    gsap.set(this.el.pill, { width: 0 });
+    gsap.set(this.el.blue, { '--reveal': '0px' });
+    gsap.set(this.el.caret, { x: 0 });
   }
 
   /** "style" start: the phrase as ordinary headline text. No pill, no caret. */
@@ -286,6 +287,18 @@ export class Hero {
     return t;
   }
 
+  /** Types `word` in cobalt on the pale pill, which grows with the text. Returns the end time. */
+  typeHighlighted(tl, t, word) {
+    const { pill, blue, caret } = this.el;
+    tl.set(pill, { autoAlpha: 1 }, t);
+    return this.keys(word, t, (i, at) => {
+      const pw = this.pillWidth(word, i);
+      tl.set(blue, { '--reveal': this.reveal(word, i) }, at);
+      tl.to(pill, { width: pw, duration: 0.055, ease: 'power3.out' }, at);
+      tl.to(caret, { x: pw + CARET_GAP, duration: 0.055, ease: 'power3.out' }, at);
+    });
+  }
+
   /** Plain text gets selected (start of the phrase → caret), then relaxes into the Figma frame. */
   selectAndSettle(tl, word) {
     const T = TIMING;
@@ -308,23 +321,14 @@ export class Hero {
 
   /* ---------- openings ---------- */
 
-  /** "type": caret arrives → blinks → types the phrase → selects it. */
+  /** "type": caret arrives → blinks → types the phrase, highlighted from the first character. */
   openTyping(word) {
-    const T = TIMING;
-    const { ink, caret } = this.el;
-    const widths = this.widths(word);
     const tl = gsap.timeline();
     this.caretIn(tl);
-
     let t = this.blinks(tl, tl.duration() - 0.1) + 0.06;
     tl.addLabel('type', t);
-    t = this.keys(word, t, (i, at) => {
-      tl.set(ink, { '--reveal': this.reveal(word, i) }, at);
-      tl.to(caret, { x: PAD_L + widths[i] + TYPE_GAP, duration: 0.055, ease: 'power3.out' }, at);
-    });
-
-    tl.to({}, { duration: T.afterType }, t);
-    this.selectAndSettle(tl, word);
+    t = this.typeHighlighted(tl, t, word);
+    tl.call(() => this.startBlink(), null, t + 0.15);
     return tl;
   }
 
@@ -379,13 +383,7 @@ export class Hero {
     let t = this.blinks(tl, tl.labels.blink) + 0.06;
 
     // 4. Type: one character at a time, the pill and caret following the text.
-    tl.set(pill, { autoAlpha: 1 }, t);
-    t = this.keys(toWord, t, (i, at) => {
-      const pw = this.pillWidth(toWord, i);
-      tl.set(blue, { '--reveal': this.reveal(toWord, i) }, at);
-      tl.to(pill, { width: pw, duration: 0.055, ease: 'power3.out' }, at);
-      tl.to(caret, { x: pw + CARET_GAP, duration: 0.055, ease: 'power3.out' }, at);
-    });
+    t = this.typeHighlighted(tl, t, toWord);
 
     tl.call(() => this.startBlink(), null, t + 0.15);
     return tl;

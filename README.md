@@ -35,8 +35,7 @@ Built with [GSAP](https://gsap.com). There are two openings to compare, and both
 
 1. The headline rises in word by word, with an empty space where the phrase goes.
 2. **Blink** — the caret, with the logo shape on top, appears and blinks twice.
-3. **Type** — the phrase is typed as plain text.
-4. **Select** — the selection sweeps across it and relaxes into the pale highlight.
+3. **Type** — the phrase is typed in cobalt on the pale highlight, which grows with each character.
 
 **Style** — the phrase is already written:
 
