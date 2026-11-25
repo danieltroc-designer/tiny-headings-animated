@@ -220,32 +220,7 @@ svg {
   color: var(--cobalt);
 }
 
-/* Word masks for the rise-in. The padding/margin pair keeps descenders and side bearings unclipped. */
-.w {
-  display: inline-block;
-  overflow: hidden;
-  vertical-align: top;
-  padding: 0.12em 0.05em 0.2em;
-  margin: -0.12em -0.05em -0.2em;
-}
-
-.w-in {
-  display: inline-block;
-  will-change: transform;
-}
-
-/* The typed phrase. The slot reserves the width; everything inside is positioned from its left edge. */
-.slot-mask {
-  display: block;
-  overflow: hidden;
-  padding-right: 20px;
-  margin-right: -20px;
-}
-
-.slot-mask.is-open {
-  overflow: visible;
-}
-
+/* The highlighted phrase. The slot reserves the width; everything inside is positioned from its left edge. */
 .slot {
   position: relative;
   display: block;
@@ -280,14 +255,9 @@ svg {
   white-space: nowrap;
 }
 
-.t-ink {
-  color: var(--ink);
-  clip-path: inset(-12px calc(100% - var(--reveal, 9999px)) -12px -8px);
-}
-
 .t-blue {
   color: var(--cobalt);
-  clip-path: inset(-12px calc(100% - var(--reveal, 0px)) -12px -8px);
+  clip-path: inset(-12px calc(100% - var(--reveal, 9999px)) -12px -8px);
 }
 
 .t-sel {
@@ -792,26 +762,6 @@ svg {
 .switch-btn[aria-pressed='true'] {
   background: var(--cobalt);
   color: var(--white);
-}
-
-.switch-btn--text {
-  font-size: 11px;
-  height: 30px;
-}
-
-.switch-label {
-  margin-top: 2px;
-  font: 600 9px/12px var(--font);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.switch-rule {
-  width: 24px;
-  height: 1px;
-  margin: 2px 0;
-  background: var(--line);
 }
 
 /* Off-screen copy of the headline type, used to measure words before they are typed. */
