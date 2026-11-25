@@ -46,16 +46,26 @@ export const VERSIONS = {
    `anchor` – which word the line is centred for when it does not fully follow:
               'first' = the first word, 'middle' = half-way between the shortest
               and the longest word, so the error is split left and right.
-   `settle` – true = nothing moves while the word is selected and typed; the
-              line then drifts slowly to centre during the pause.
+   `fit`    – makes the rotating words closer to the same width, so a centred
+              line has less to make up. Each word gets its own letter-spacing
+              and its own padding inside the highlight: long words are set a
+              little tighter with less padding, short words a little looser
+              with more.
+                ls     – how far letter-spacing may move either way (0.02 = 2%)
+                padMin – smallest left padding a long word may get (18 is normal)
+                padMax – largest left padding a short word may get
+                dot    – false drops the full stop from every word. It makes all
+                         of them shorter by the same amount, so it does not bring
+                         them closer together.
 ------------------------------------------------------------------- */
+const FIT = { ls: 0.02, padMin: 10, padMax: 34 };
 export const STARTS = {
   type: { opening: 'type', follow: 1 },
   style: { opening: 'style', follow: 1 },
   style2: { opening: 'style', follow: 0, anchor: 'first' },
   style3: { opening: 'style', follow: 0, anchor: 'middle' },
-  style4: { opening: 'style', follow: 0.5, anchor: 'middle' },
-  style5: { opening: 'style', follow: 1, settle: true },
+  style4: { opening: 'style', follow: 1, fit: FIT },
+  style5: { opening: 'style', follow: 0, anchor: 'middle', fit: FIT },
 };
 
 /* ------------------------------------------------------------------
@@ -65,7 +75,6 @@ export const TIMING = {
   beforeStart: 0.7, // how long the plain headline sits before the caret arrives
   settle: 0.4, // "style" only: selection relaxing into the pale highlight
   hold: 2.3, // how long a finished word stays before the next swap
-  drift: 1.4, // "settle" options only: how long the line takes to drift back to centre
   select: 0.32, // selection sweeping across the word
   selectHold: 0.2, // word stays selected
   remove: 0.16, // selection collapsing (the word is deleted)
@@ -80,9 +89,12 @@ const PAD_L = 18;
 const PAD_R = 20;
 const CARET_GAP = 5;
 const CARET_W = 3;
+const SIZE = 64; // headline font size, px
+const BASE_LS = -0.025; // headline letter-spacing, em
 /* Browsers trim the (negative) letter-spacing after the last character and Figma does not.
-   Adding it back keeps the pill the exact width drawn in Figma: 64 px × 2.5%. */
-const TRAIL = 1.6;
+   Adding it back keeps the pill the exact width drawn in Figma: 64 px × 2.5% = 1.6 px. */
+const trailFor = (ls) => Math.max(0, -ls * SIZE);
+const BASE_SHAPE = { ls: BASE_LS, padL: PAD_L, padR: PAD_R, trail: trailFor(BASE_LS) };
 
 const FLAG = `<svg class="caret-flag" viewBox="0 0 17 17" aria-hidden="true"><path d="M11.2347 0C14.1246 0.0163268 16.98 2.37143 16.98 5.80309C16.98 5.80309 16.9978 6.67505 17 7.72983V8.17071C16.9995 8.36937 16.9978 8.57075 16.9961 8.77105L16.9922 9.07042C16.9795 9.91294 16.9495 10.6973 16.8867 11.1055C16.4871 13.7273 14.4898 15.5392 11.7365 15.9985C9.25521 16.4742 7.7842 16.7496 7.30847 16.8416C7.10474 16.8835 6.20381 17 5.81301 17C2.78773 17 0.0427414 14.7794 0 11.1969V10.6085L0.000554162 10.5073V10.2863C0.00166596 9.90043 0.00277435 9.42745 0.00499455 8.94088L0.00666059 8.64749C0.011101 7.71732 0.0194276 6.78932 0.0344148 6.36262C0.136 3.74898 1.98006 1.63664 5.48995 0.960109L9.95965 0.108854C10.3677 0.033201 10.8184 0 11.2347 0Z"/></svg>`;
 
@@ -110,10 +122,12 @@ export class Hero {
 
   /* ---------- measuring ---------- */
 
-  /** Width of every prefix of `word` in headline type: [0, w1, w2, … full]. */
-  widths(word) {
-    if (this.cache.has(word)) return this.cache.get(word);
+  /** Width of every prefix of `word` in headline type at letter-spacing `ls`: [0, w1, w2, … full]. */
+  measure(word, ls) {
+    const key = `${word}|${ls}`;
+    if (this.cache.has(key)) return this.cache.get(key);
     const el = this.measureEl;
+    el.style.letterSpacing = `${ls}em`;
     el.textContent = word;
     const node = el.firstChild;
     const range = document.createRange();
@@ -124,12 +138,55 @@ export class Hero {
       out.push(range.getBoundingClientRect().width);
     }
     out[word.length] = el.getBoundingClientRect().width;
-    this.cache.set(word, out);
+    this.cache.set(key, out);
     return out;
   }
 
+  widths(word) {
+    return this.measure(word, this.shape(word).ls);
+  }
+
+  /** Letter-spacing and padding for `word`. The same for every word unless the option has `fit`. */
+  shape(word) {
+    if (!this.shapes) this.shapes = this.fitShapes();
+    return this.shapes.get(word) || BASE_SHAPE;
+  }
+
+  /** Works out, per word, how much tighter or looser to set it so the highlights end up as close in width as allowed. */
+  fitShapes() {
+    const map = new Map();
+    const { fit } = this.option;
+    if (!fit || this.words.length < 2) return map;
+    const text = (w, ls) => this.measure(w, ls).at(-1) + trailFor(ls);
+    const pill = (w, ls, padL) => padL + text(w, ls) + padL + (PAD_R - PAD_L);
+    const narrowest = this.words.map((w) => pill(w, BASE_LS - fit.ls, fit.padMin));
+    const widest = this.words.map((w) => pill(w, BASE_LS + fit.ls, fit.padMax));
+    // Aim half-way between what the longest word can shrink to and what the shortest can grow to.
+    const target = (Math.max(...narrowest) + Math.min(...widest)) / 2;
+    this.words.forEach((w, i) => {
+      const natural = pill(w, BASE_LS, PAD_L);
+      const shrink = target < natural;
+      const room = shrink ? natural - narrowest[i] : widest[i] - natural;
+      const share = room > 0 ? Math.min(1, Math.abs(target - natural) / room) : 0;
+      const ls = Math.round((BASE_LS + (shrink ? -1 : 1) * share * fit.ls) * 10000) / 10000;
+      // Letter-spacing takes its share; padding then makes up exactly what is left, within its limits.
+      const padL = Math.min(fit.padMax, Math.max(fit.padMin, (target - text(w, ls) - (PAD_R - PAD_L)) / 2));
+      map.set(w, { ls, padL, padR: padL + (PAD_R - PAD_L), trail: trailFor(ls) });
+    });
+    return map;
+  }
+
+  /** Puts `word` into a text layer with that word's own letter-spacing and left padding. */
+  dress(el, word) {
+    const s = this.shape(word);
+    el.textContent = word;
+    el.style.letterSpacing = `${s.ls}em`;
+    el.style.left = `${s.padL}px`;
+  }
+
   pillWidth(word, chars = word.length) {
-    return PAD_L + this.widths(word)[chars] + TRAIL + PAD_R;
+    const s = this.shape(word);
+    return s.padL + this.widths(word)[chars] + s.trail + s.padR;
   }
 
   slotWidth(word) {
@@ -145,7 +202,7 @@ export class Hero {
     const { follow = 1, anchor = 'first' } = this.option;
     const own = this.slotWidth(word);
     if (follow >= 1) return own;
-    const all = this.version.words.map((w) => this.slotWidth(w));
+    const all = this.words.map((w) => this.slotWidth(w));
     const ref = anchor === 'middle' ? (Math.min(...all) + Math.max(...all)) / 2 : all[0];
     return ref + (own - ref) * follow;
   }
@@ -173,6 +230,9 @@ export class Hero {
     const v = VERSIONS[id];
     this.version = v;
     this.index = 0;
+    this.shapes = null;
+    const fit = this.option.fit;
+    this.words = v.words.map((w) => (fit && fit.dot === false ? w.replace(/\.$/, '') : w));
 
     const all = v.words.length > 1 ? v.words.join(' / ') : v.words[0];
     this.h1.setAttribute('aria-label', `${v.line1} ${v.prefix ? v.prefix + ' ' : ''}${all}`);
@@ -202,16 +262,16 @@ export class Hero {
       flag: q('.caret-flag'),
     };
 
-    const first = v.words[0];
-    const rotates = v.words.length > 1;
+    const first = this.words[0];
+    const rotates = this.words.length > 1;
 
     if (this.reduceMotion) {
       // No typing or restyling: the finished headline, and the word simply changes.
       this.setRest(first);
       if (rotates) {
         this.reducedTimer = setInterval(() => {
-          this.index = (this.index + 1) % v.words.length;
-          this.setRest(v.words[this.index]);
+          this.index = (this.index + 1) % this.words.length;
+          this.setRest(this.words[this.index]);
         }, 3000);
       }
     } else {
@@ -231,11 +291,11 @@ export class Hero {
     const pw = this.pillWidth(word);
     gsap.set(slot, { width: this.lineWidth(word) });
     gsap.set(pill, { width: pw, autoAlpha: 1 });
-    blue.textContent = word;
+    this.dress(blue, word);
     gsap.set(blue, { '--reveal': this.reveal(word) });
-    ink.textContent = word;
+    this.dress(ink, word);
     gsap.set(ink, { autoAlpha: 0 });
-    selText.textContent = word;
+    this.dress(selText, word);
     gsap.set(sel, { width: pw, autoAlpha: 1, '--sel-l': '100%', '--sel-r': '0%' });
     gsap.set(caret, { x: pw + CARET_GAP, autoAlpha: 1 });
   }
@@ -324,7 +384,7 @@ export class Hero {
 
     tl.call(() => {
       this.stopBlink();
-      selText.textContent = fromWord;
+      this.dress(selText, fromWord);
     })
       .set(sel, { width: this.pillWidth(fromWord), autoAlpha: 1, '--sel-l': '100%', '--sel-r': '0%' })
       .set(caret, { autoAlpha: 1 });
@@ -338,15 +398,14 @@ export class Hero {
       .set(pill, { width: 0, autoAlpha: 0 })
       .set(blue, { '--reveal': '0px' })
       .call(() => {
-        blue.textContent = toWord;
+        this.dress(blue, toWord);
       })
       .to({}, { duration: T.selectHold });
 
     // 2. Remove: the selection collapses onto the caret, and the line settles to the new width.
     tl.addLabel('remove')
       .to(sel, { '--sel-r': '100%', duration: T.remove, ease: 'power2.in' }, 'remove')
-      .to({}, { duration: 0.01 }, 'remove');
-    if (!this.option.settle) tl.to(slot, { width: this.lineWidth(toWord), duration: 0.6, ease: 'power3.inOut' }, 'remove');
+      .to(slot, { width: this.lineWidth(toWord), duration: 0.6, ease: 'power3.inOut' }, 'remove');
 
     // 3. Blink: the caret waits with the logo flag on top.
     tl.addLabel('blink', `remove+=${T.remove}`).fromTo(
@@ -381,19 +440,12 @@ export class Hero {
     }
 
     tl.call(() => this.startBlink(), null, t + 0.15);
-    // "settle": the line only re-centres now, slowly, once the typing is over.
-    if (this.option.settle) {
-      tl.call(() => {
-        const drift = gsap.to(slot, { width: this.slotWidth(toWord), duration: TIMING.drift, ease: 'sine.inOut', onComplete: () => this.live.delete(drift) });
-        this.live.add(drift);
-      }, null, t + 0.3);
-    }
     return tl;
   }
 
   /** Waits, swaps to the next word, and repeats. */
   loop() {
-    const words = this.version.words;
+    const words = this.words;
     if (words.length < 2) return;
     const wait = gsap.delayedCall(TIMING.hold, () => {
       this.live.delete(wait);

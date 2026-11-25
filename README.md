@@ -51,15 +51,20 @@ Both end on the frame drawn in Figma. V3 then keeps rotating its last word (gove
 
 **Style 2 to 5** — steadier takes on V3
 
-With Type and Style the line stays centred, so every time the new word is a different length, "Enterprise-grade" jumps sideways, by up to 65 px. A centred line cannot avoid this, so the other options trade the jump against how far off-centre the line may sit. They all open like Style, and they only differ on V3.
+With Type and Style the line stays centred, so every time the new word is a different length, "Enterprise-grade" jumps sideways, by up to 65 px. The other options reduce that in two ways, alone or together. They all open like Style, and they only differ on V3.
 
-| Option | What the line does | Biggest jump | Furthest off-centre |
+- **Hold the line still** (Style 2, 3, 5): the line is centred once and then stays put, so it sits a little off-centre on some words.
+- **Make the words closer in width** (Style 4, 5): long words are set tighter with less padding inside the highlight, short words looser with more. The limits are 2% of letter-spacing either way and 10 to 34 px of left padding (18 px is normal). That brings the widest and narrowest highlight from 131 px apart to 57 px apart. Making them exactly equal would need about 60 px of padding on each side of the short words.
+
+| Option | What it does | Biggest jump | Furthest off-centre |
 | --- | --- | --- | --- |
-| Type, Style | Always centred | 65 px | 0 |
-| Style 2 | Never moves; centred for the first word | 0 | 59 px (always to the left) |
-| Style 3 | Never moves; centred between the shortest and longest word | 0 | 33 px (either way; 26 px at load) |
-| Style 4 | Moves half-way | 33 px | 17 px (13 px at load) |
-| Style 5 | Still while the word is typed, then drifts to centre over 1.4 s | 0, then a slow 65 px drift | 0 once settled |
+| Type, Style | Always centred, words untouched | 65 px | 0 |
+| Style 2 | Line never moves; centred for the first word | 0 | 59 px (always to the left) |
+| Style 3 | Line never moves; centred between the shortest and longest word | 0 | 33 px (either way) |
+| Style 4 | Always centred; words nudged towards the same width | 29 px | 0 |
+| Style 5 | Words nudged towards the same width, and the line never moves | 0 | 15 px (either way) |
+
+In Style 4 and 5 the first word is nudged too, so "governance." is set slightly tighter than in Figma.
 
 ### Where to change things
 
@@ -69,7 +74,7 @@ With Type and Style the line stays centred, so every time the new word is a diff
 | Speed of each step, pause between swaps | `TIMING` in `src/hero.js` |
 | The Type sequence and the word swap | `retype()` and `replace()` in `src/hero.js` |
 | The Style sequence | `restyle()` in `src/hero.js` |
-| The options, and how much each lets the line move | `STARTS` in `src/hero.js` |
+| The options: how much the line may move, and the limits for nudging word widths | `STARTS` and `FIT` in `src/hero.js` |
 | Colours, sizes, layout | `src/styles.css` |
 
 ## Notes
