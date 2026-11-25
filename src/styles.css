@@ -255,6 +255,10 @@ svg {
   white-space: nowrap;
 }
 
+.t-ink {
+  color: var(--ink);
+}
+
 .t-blue {
   color: var(--cobalt);
   clip-path: inset(-12px calc(100% - var(--reveal, 9999px)) -12px -8px);
@@ -762,6 +766,26 @@ svg {
 .switch-btn[aria-pressed='true'] {
   background: var(--cobalt);
   color: var(--white);
+}
+
+.switch-btn--text {
+  font-size: 11px;
+  height: 30px;
+}
+
+.switch-label {
+  margin-top: 2px;
+  font: 600 9px/12px var(--font);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.switch-rule {
+  width: 24px;
+  height: 1px;
+  margin: 2px 0;
+  background: var(--line);
 }
 
 /* Off-screen copy of the headline type, used to measure words before they are typed. */

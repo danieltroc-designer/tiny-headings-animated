@@ -22,21 +22,30 @@ npm run dev
 ## Using the prototype
 
 - The **V1 / V2 / V3** buttons on the right edge switch versions. They float over the page and never move the layout.
-- Keyboard: `1`, `2`, `3` switch versions.
+- **Start** picks one of two options for the headline: **Type** or **Style** (see below). The choice is remembered in the browser.
+- The round arrow plays the headline again from the start.
+- Keyboard: `1`, `2`, `3` switch versions, `S` toggles the start, `R` plays again.
 - The address ends in `#v1`, `#v2` or `#v3`, so a link opens on a specific version.
 
 ## Motion
 
-Nothing is animated in. The whole page, including the full headline, is visible from the first paint, and the headline is in the HTML itself, so it shows even if JavaScript fails.
+Nothing is faded or slid in. The whole page, including every word of the headline, is visible from the first paint, and the headline is in the HTML itself, so it shows even if JavaScript fails. There is never an empty space where the phrase goes at load.
 
-The only motion is the word swap in V2, built with [GSAP](https://gsap.com). "Enterprise-grade governance." is on the page at load; after a pause the last word changes:
+The motion is inside the headline's last phrase, built with [GSAP](https://gsap.com). In both options the phrase loads as ordinary dark headline text, and after a short pause:
 
-1. **Select** — the word is selected, from the caret back to its start.
+**Type** (default)
+
+1. **Select** — the caret, with the logo shape on top, appears at the end of the phrase and selects it.
 2. **Remove** — the selection collapses.
-3. **Blink** — the caret, with the logo shape on top, blinks twice.
-4. **Type** — the next word is typed in cobalt on the pale highlight.
+3. **Blink** — the caret blinks twice.
+4. **Type** — the same phrase is typed again, in cobalt on the pale highlight.
 
-It cycles through governance, security, accessibility, support and self-hosting. V1 and V3 have a single phrase, so they are completely still.
+**Style**
+
+1. **Select** — the caret appears at the start of the phrase and drags a selection across it.
+2. The selection relaxes into the pale highlight. Nothing is typed.
+
+Both end on the frame drawn in Figma. V2 then keeps rotating its last word (governance, security, accessibility, support, self-hosting) with the Type sequence: select → remove → blink → type, with a pause of a little over two seconds on each word.
 
 ### Where to change things
 
@@ -44,14 +53,15 @@ It cycles through governance, security, accessibility, support and self-hosting.
 | --- | --- |
 | Headline copy, the rotating words, the paragraph | `VERSIONS` in `src/hero.js` |
 | Speed of each step, pause between swaps | `TIMING` in `src/hero.js` |
-| The word swap | `replace()` in `src/hero.js` |
+| The Type sequence and the word swap | `retype()` and `replace()` in `src/hero.js` |
+| The Style sequence | `restyle()` in `src/hero.js` |
 | Colours, sizes, layout | `src/styles.css` |
 
 ## Notes
 
 - Layout is a fixed 1440 px frame. Narrower windows scale the whole frame down; wider windows centre it and let the backgrounds run to the edges. There is no mobile layout yet.
 - Type is Inter 3.19 (the `inter-ui` package), the same version the Figma file uses, so text widths match the design.
-- With "reduce motion" switched on in the operating system, V2 changes words without the typing effect.
+- With "reduce motion" switched on in the operating system, the headline loads finished and V2 changes words without the typing effect.
 - The demo content is an image exported from Figma (`public/assets/demo-newsletter@2x.png`); the tabs above it are not interactive.
 - Second logo row: Atlassian and Shopify were hidden in the Figma logo grid; Oasis LMS, MinuteMe and Catapult come from the testimonials further down the page, recoloured to match.
 

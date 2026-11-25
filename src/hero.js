@@ -28,9 +28,21 @@ export const VERSIONS = {
 };
 
 /* ------------------------------------------------------------------
-   Timing of the word swap, in seconds. Tune the feel here.
+   Two options to compare. In both, the whole headline is on the page from the
+   first moment; there is never an empty space where the phrase goes.
+   The phrase loads as ordinary headline text, and then:
+     type  – it is selected, removed, and typed again on the pale highlight.
+     style – it is selected and turns into the highlight. Nothing is typed.
+   Versions with several words then rotate them the same way in both options.
+------------------------------------------------------------------- */
+export const STARTS = ['type', 'style'];
+
+/* ------------------------------------------------------------------
+   Timing, in seconds. Tune the feel here.
 ------------------------------------------------------------------- */
 export const TIMING = {
+  beforeStart: 0.7, // how long the plain headline sits before the caret arrives
+  settle: 0.4, // "style" only: selection relaxing into the pale highlight
   hold: 2.3, // how long a finished word stays before the next swap
   select: 0.32, // selection sweeping across the word
   selectHold: 0.2, // word stays selected
@@ -59,15 +71,17 @@ const seeded = (seed) => () => {
 };
 
 /**
- * The headline. It is drawn complete, in its finished state, as soon as it renders.
- * The only motion is the word swap on versions with more than one word.
+ * The headline. All of its words are on the page as soon as it renders; nothing fades or
+ * slides in. The motion is the opening (see STARTS) and, on versions with several words,
+ * the word swap that follows.
  */
 export class Hero {
-  constructor({ h1, lead, measure, reduceMotion = false }) {
+  constructor({ h1, lead, measure, reduceMotion = false, start = 'type' }) {
     this.h1 = h1;
     this.lead = lead;
     this.measureEl = measure;
     this.reduceMotion = reduceMotion;
+    this.start = start;
     this.live = new Set();
     this.cache = new Map();
   }
@@ -132,6 +146,7 @@ export class Hero {
         ${v.prefix ? `<span class="h1-static">${v.prefix}</span>` : ''}
         <span class="slot">
           <span class="pill"><span class="t t-blue"></span></span>
+          <span class="t t-ink"></span>
           <span class="sel"><span class="t t-sel"></span></span>
           <span class="caret"><span class="caret-line"></span>${FLAG}</span>
         </span>
@@ -144,38 +159,57 @@ export class Hero {
       slot: q('.slot'),
       pill: q('.pill'),
       blue: q('.t-blue'),
+      ink: q('.t-ink'),
       sel: q('.sel'),
       selText: q('.t-sel'),
       caret: q('.caret'),
       flag: q('.caret-flag'),
     };
 
-    this.setRest(v.words[0]);
-    if (v.words.length < 2) return;
+    const first = v.words[0];
+    const rotates = v.words.length > 1;
 
     if (this.reduceMotion) {
-      // No typing: the word simply changes.
-      this.reducedTimer = setInterval(() => {
-        this.index = (this.index + 1) % v.words.length;
-        this.setRest(v.words[this.index]);
-      }, 3000);
+      // No typing or restyling: the finished headline, and the word simply changes.
+      this.setRest(first);
+      if (rotates) {
+        this.reducedTimer = setInterval(() => {
+          this.index = (this.index + 1) % v.words.length;
+          this.setRest(v.words[this.index]);
+        }, 3000);
+      }
     } else {
-      this.startBlink();
-      this.loop();
+      this.setPlain(first);
+      const tl = this.start === 'style' ? this.restyle(first) : this.retype(first);
+      tl.eventCallback('onComplete', () => {
+        this.live.delete(tl);
+        this.loop();
+      });
+      this.live.add(tl);
     }
   }
 
   /** The finished frame, as drawn in Figma: cobalt word on the pale pill, caret at the end. */
   setRest(word) {
-    const { slot, pill, blue, sel, selText, caret } = this.el;
+    const { slot, pill, blue, ink, sel, selText, caret } = this.el;
     const pw = this.pillWidth(word);
     gsap.set(slot, { width: this.slotWidth(word) });
-    gsap.set(pill, { width: pw });
+    gsap.set(pill, { width: pw, autoAlpha: 1 });
     blue.textContent = word;
     gsap.set(blue, { '--reveal': this.reveal(word) });
+    ink.textContent = word;
+    gsap.set(ink, { autoAlpha: 0 });
     selText.textContent = word;
-    gsap.set(sel, { width: pw, '--sel-l': '100%', '--sel-r': '0%' });
-    gsap.set(caret, { x: pw + CARET_GAP });
+    gsap.set(sel, { width: pw, autoAlpha: 1, '--sel-l': '100%', '--sel-r': '0%' });
+    gsap.set(caret, { x: pw + CARET_GAP, autoAlpha: 1 });
+  }
+
+  /** How both options load: the phrase as ordinary headline text. No pill, no caret yet. */
+  setPlain(word) {
+    this.setRest(word);
+    gsap.set(this.el.pill, { autoAlpha: 0 });
+    gsap.set(this.el.ink, { autoAlpha: 1 });
+    gsap.set(this.el.caret, { x: 0, autoAlpha: 0 });
   }
 
   /* ---------- caret ---------- */
@@ -194,18 +228,69 @@ export class Hero {
     this.blinkTl = null;
   }
 
+  /** Caret fades in with the logo flag popping out of it. */
+  caretIn(tl) {
+    const { caret, flag } = this.el;
+    tl.to(caret, { autoAlpha: 1, duration: 0.14, ease: 'none' }).fromTo(
+      flag,
+      { scale: 0 },
+      { scale: 1, duration: 0.42, ease: 'back.out(2.4)' },
+      '<',
+    );
+  }
+
+  /* ---------- "type" option: the written phrase is selected and typed again ---------- */
+
+  retype(word) {
+    const tl = gsap.timeline({ delay: TIMING.beforeStart });
+    // The caret arrives at the end of the phrase, then the usual swap runs with the same word.
+    tl.set(this.el.caret, { x: this.pillWidth(word) + CARET_GAP });
+    this.caretIn(tl);
+    tl.to({}, { duration: 0.2 }).add(this.replace(word, word));
+    return tl;
+  }
+
+  /* ---------- "style" option: the written phrase is selected and becomes the highlight ---------- */
+
+  restyle(word) {
+    const T = TIMING;
+    const { pill, ink, sel, caret } = this.el;
+    const pw = this.pillWidth(word);
+    const tl = gsap.timeline({ delay: T.beforeStart });
+
+    // The caret arrives at the start of the phrase.
+    tl.set(caret, { x: 0 });
+    this.caretIn(tl);
+    tl.to({}, { duration: 0.1 });
+
+    // It drags a selection across the phrase…
+    tl.addLabel('select')
+      .set(sel, { '--sel-l': '0%', '--sel-r': '100%' }, 'select')
+      .to(sel, { '--sel-r': '0%', duration: T.select, ease: 'power2.inOut' }, 'select')
+      .to(caret, { x: pw + CARET_GAP, duration: T.select, ease: 'power2.inOut' }, 'select')
+      // …and behind the selection the plain text is swapped for the styled one.
+      .set(ink, { autoAlpha: 0 })
+      .set(pill, { autoAlpha: 1 })
+      .to({}, { duration: T.selectHold })
+      .addLabel('settle')
+      .to(sel, { autoAlpha: 0, duration: T.settle, ease: 'power2.out' })
+      .set(sel, { autoAlpha: 1, '--sel-l': '100%', '--sel-r': '0%' })
+      .call(() => this.startBlink());
+    return tl;
+  }
+
   /* ---------- the word swap: select → remove → blink → type ---------- */
 
   replace(fromWord, toWord) {
     const T = TIMING;
-    const { slot, pill, blue, sel, selText, caret, flag } = this.el;
+    const { slot, pill, blue, ink, sel, selText, caret, flag } = this.el;
     const tl = gsap.timeline();
 
     tl.call(() => {
       this.stopBlink();
       selText.textContent = fromWord;
     })
-      .set(sel, { width: this.pillWidth(fromWord), '--sel-l': '100%', '--sel-r': '0%' })
+      .set(sel, { width: this.pillWidth(fromWord), autoAlpha: 1, '--sel-l': '100%', '--sel-r': '0%' })
       .set(caret, { autoAlpha: 1 });
 
     // 1. Select: the selection grows from the caret back to the start of the word.
@@ -213,6 +298,7 @@ export class Hero {
       .to(sel, { '--sel-l': '0%', duration: T.select, ease: 'power2.inOut' }, 'select')
       .to(caret, { x: 0, duration: T.select, ease: 'power2.inOut' }, 'select')
       // Hidden behind the selection: swap what sits underneath.
+      .set(ink, { autoAlpha: 0 })
       .set(pill, { width: 0, autoAlpha: 0 })
       .set(blue, { '--reveal': '0px' })
       .call(() => {
