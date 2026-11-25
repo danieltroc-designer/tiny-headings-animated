@@ -7,7 +7,7 @@ Three versions of the tiny.cloud homepage hero, built 1:1 from the Figma page
 - **V2** — You build the app. We bring **the editor.**
 - **V3** — Your editor. Our engine. Enterprise-grade **governance. / security. / accessibility. / support. / self-hosting.** (the last word keeps rotating)
 
-V2 and V3 swapped places on 25 Nov 2026: the rotating headline used to be V2. The Figma frames on the "3 Headings + Demo" page still carry the old names.
+V2 and V3 swapped places on 25 Nov 2026: the rotating headline used to be V2. The frames on the Figma page "3 Headings + Demo" were renamed to match.
 
 The nav, hero, demo and customer logos are real. Everything below the logos is a
 placeholder: section heights and background colours match the design, content is blocked out.
