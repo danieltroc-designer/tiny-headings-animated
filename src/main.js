@@ -2,13 +2,14 @@ import 'inter-ui/inter-latin.css'; // Inter 3.19, the version the Figma file is 
 import '@fontsource/fira-code/500.css';
 import './styles.css';
 import gsap from 'gsap';
-import { Hero, VERSIONS } from './hero.js';
+import { Hero, VERSIONS, STARTS } from './hero.js';
 
 const DESIGN_WIDTH = 1440;
 const frame = document.getElementById('frame');
 const h1 = document.getElementById('h1');
 const lead = document.getElementById('lead');
 const buttons = [...document.querySelectorAll('.switch-btn[data-version]')];
+const startButtons = [...document.querySelectorAll('.switch-btn[data-start]')];
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* Scale the 1440 px frame down to fit narrower windows. Wider windows keep it at 1:1, centred. */
@@ -19,7 +20,16 @@ const fit = () => {
 fit();
 window.addEventListener('resize', fit);
 
-const hero = new Hero({ h1, lead, measure: document.getElementById('measure'), reduceMotion });
+/* Which opening to play. Remembered per browser; "type" is the default. */
+let start = 'type';
+try {
+  const saved = localStorage.getItem('hero-start');
+  if (STARTS.includes(saved)) start = saved;
+} catch {
+  /* storage is a convenience only */
+}
+
+const hero = new Hero({ h1, lead, measure: document.getElementById('measure'), reduceMotion, start });
 if (import.meta.env.DEV) window.__hero = hero;
 
 let current = VERSIONS[location.hash.slice(1)] ? location.hash.slice(1) : 'v1';
@@ -28,6 +38,7 @@ let ticket = 0;
 
 const markActive = () => {
   buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.version === current)));
+  startButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.start === hero.start)));
   try {
     history.replaceState(null, '', `#${current}`);
   } catch {
@@ -58,10 +69,26 @@ function playPage() {
   });
 }
 
-/** Switching versions: only the headline and the paragraph change. */
-async function switchTo(id) {
+/** Switching versions or openings: only the headline and the paragraph change. */
+function switchTo(id) {
   if (id === current || !VERSIONS[id]) return;
   current = id;
+  restartHero();
+}
+
+function setStart(mode) {
+  if (mode === hero.start || !STARTS.includes(mode)) return;
+  hero.start = mode;
+  try {
+    localStorage.setItem('hero-start', mode);
+  } catch {
+    /* storage is a convenience only */
+  }
+  restartHero();
+}
+
+async function restartHero() {
+  const id = current;
   markActive();
   const mine = ++ticket;
 
@@ -81,11 +108,13 @@ async function switchTo(id) {
 }
 
 buttons.forEach((b) => b.addEventListener('click', () => switchTo(b.dataset.version)));
+startButtons.forEach((b) => b.addEventListener('click', () => setStart(b.dataset.start)));
 document.getElementById('replay').addEventListener('click', playPage);
 window.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (['1', '2', '3'].includes(e.key)) switchTo(`v${e.key}`);
   if (e.key.toLowerCase() === 'r') playPage();
+  if (e.key.toLowerCase() === 's') setStart(hero.start === 'type' ? 'style' : 'type');
 });
 window.addEventListener('hashchange', () => switchTo(location.hash.slice(1)));
 

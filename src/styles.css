@@ -282,6 +282,7 @@ svg {
 
 .t-ink {
   color: var(--ink);
+  clip-path: inset(-12px calc(100% - var(--reveal, 9999px)) -12px -8px);
 }
 
 .t-blue {
@@ -791,6 +792,19 @@ svg {
 .switch-btn[aria-pressed='true'] {
   background: var(--cobalt);
   color: var(--white);
+}
+
+.switch-btn--text {
+  font-size: 11px;
+  height: 30px;
+}
+
+.switch-label {
+  margin-top: 2px;
+  font: 600 9px/12px var(--font);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .switch-rule {

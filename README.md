@@ -22,21 +22,29 @@ npm run dev
 ## Using the prototype
 
 - The **V1 / V2 / V3** buttons on the right edge switch versions. They float over the page and never move the layout.
+- **Start** picks how the headline opens: **Type** or **Style** (see below). The choice is remembered in the browser.
 - The round arrow replays the whole page entrance.
-- Keyboard: `1`, `2`, `3` switch versions, `R` replays.
+- Keyboard: `1`, `2`, `3` switch versions, `S` toggles the start, `R` replays.
 - The address ends in `#v1`, `#v2` or `#v3`, so a link opens on a specific version.
 
 ## The headline animation
 
-Every version runs the same sequence, built with [GSAP](https://gsap.com):
+Built with [GSAP](https://gsap.com). There are two openings to compare, and both end on the frame drawn in Figma (cobalt phrase on the pale pill, caret with the logo shape at the end).
 
-1. The headline rises in word by word, with the phrase as plain text.
-2. **Select** — the caret appears and the phrase is selected.
-3. **Remove** — the selection collapses.
-4. **Blink** — the caret, with the logo shape on top, blinks twice.
-5. **Type** — the phrase is typed in cobalt on the highlight pill, ending on the frame drawn in Figma.
+**Type** (default) — the phrase is missing at first:
 
-V2 then repeats steps 2–5 with the next word, forever.
+1. The headline rises in word by word, with an empty space where the phrase goes.
+2. **Blink** — the caret, with the logo shape on top, appears and blinks twice.
+3. **Type** — the phrase is typed as plain text.
+4. **Select** — the selection sweeps across it and relaxes into the pale highlight.
+
+**Style** — the phrase is already written:
+
+1. The headline rises in, with the phrase as plain text.
+2. **Select** — the caret appears and drags a selection across the phrase.
+3. The selection relaxes into the pale highlight. Nothing is typed.
+
+After either opening, V2 keeps swapping its last word: select → remove → blink → type, forever.
 
 ### Where to change things
 
@@ -44,7 +52,8 @@ V2 then repeats steps 2–5 with the next word, forever.
 | --- | --- |
 | Headline copy, the rotating words, the paragraph | `VERSIONS` in `src/hero.js` |
 | Speed of each step, pause between swaps | `TIMING` in `src/hero.js` |
-| The sequence itself | `replace()` in `src/hero.js` |
+| The two openings | `openTyping()` and `openStyling()` in `src/hero.js` |
+| The word swap (V2) | `replace()` in `src/hero.js` |
 | Page entrance (nav, demo, buttons) | `playPage()` in `src/main.js` |
 | Colours, sizes, layout | `src/styles.css` |
 

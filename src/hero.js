@@ -26,19 +26,29 @@ export const VERSIONS = {
 };
 
 /* ------------------------------------------------------------------
+   How the headline opens. Both end on the frame drawn in Figma.
+     type  – the phrase is missing: the caret blinks, types it, then selects it.
+     style – the phrase is already written: it is selected and restyled, no typing.
+   V2 swaps its words the same way after either opening.
+------------------------------------------------------------------- */
+export const STARTS = ['type', 'style'];
+
+/* ------------------------------------------------------------------
    Timing, in seconds. Tune the feel here.
 ------------------------------------------------------------------- */
 export const TIMING = {
   rise: 0.9, // each word of the headline rising in
   riseStagger: 0.055,
-  beforeSelect: 0.45, // pause between the headline landing and the selection
+  beforeStart: 0.4, // "style" start: pause between the headline landing and the caret arriving
   select: 0.32, // selection sweeping across the phrase
   selectHold: 0.2, // phrase stays selected
+  settle: 0.4, // selection relaxing into the pale highlight
   remove: 0.16, // selection collapsing (the phrase is deleted)
   blink: 0.18, // one half of a caret blink while it waits to type
   blinks: 2, // how many times the caret blinks before typing
   key: 0.062, // average time per typed character
   keyJitter: 0.03, // random variation per character
+  afterType: 0.3, // "type" start: pause between the last character and the selection
   hold: 2.3, // how long a finished word stays before the next swap (V2)
 };
 
@@ -50,6 +60,8 @@ const CARET_W = 3;
 /* Browsers trim the (negative) letter-spacing after the last character and Figma does not.
    Adding it back keeps the pill the exact width drawn in Figma: 64 px × 2.5%. */
 const TRAIL = 1.6;
+/* While plain text is being typed (no pill yet) the caret sits this close to the last character. */
+const TYPE_GAP = 4;
 
 const FLAG = `<svg class="caret-flag" viewBox="0 0 17 17" aria-hidden="true"><path d="M11.2347 0C14.1246 0.0163268 16.98 2.37143 16.98 5.80309C16.98 5.80309 16.9978 6.67505 17 7.72983V8.17071C16.9995 8.36937 16.9978 8.57075 16.9961 8.77105L16.9922 9.07042C16.9795 9.91294 16.9495 10.6973 16.8867 11.1055C16.4871 13.7273 14.4898 15.5392 11.7365 15.9985C9.25521 16.4742 7.7842 16.7496 7.30847 16.8416C7.10474 16.8835 6.20381 17 5.81301 17C2.78773 17 0.0427414 14.7794 0 11.1969V10.6085L0.000554162 10.5073V10.2863C0.00166596 9.90043 0.00277435 9.42745 0.00499455 8.94088L0.00666059 8.64749C0.011101 7.71732 0.0194276 6.78932 0.0344148 6.36262C0.136 3.74898 1.98006 1.63664 5.48995 0.960109L9.95965 0.108854C10.3677 0.033201 10.8184 0 11.2347 0Z"/></svg>`;
 
@@ -66,11 +78,12 @@ const seeded = (seed) => () => {
 };
 
 export class Hero {
-  constructor({ h1, lead, measure, reduceMotion = false }) {
+  constructor({ h1, lead, measure, reduceMotion = false, start = 'type' }) {
     this.h1 = h1;
     this.lead = lead;
     this.measureEl = measure;
     this.reduceMotion = reduceMotion;
+    this.start = start;
     this.live = new Set();
     this.cache = new Map();
   }
@@ -101,6 +114,12 @@ export class Hero {
 
   slotWidth(word) {
     return this.pillWidth(word) + CARET_GAP + CARET_W;
+  }
+
+  /** Clip value that shows the first `chars` characters of `word`. */
+  reveal(word, chars = word.length) {
+    const w = this.widths(word)[chars];
+    return `${w + (chars === word.length ? 8 : 0.5)}px`;
   }
 
   /* ---------- lifecycle ---------- */
@@ -153,8 +172,9 @@ export class Hero {
       flag: q('.caret-flag'),
     };
 
+    const first = v.words[0];
     if (this.reduceMotion) {
-      this.setRest(v.words[0]);
+      this.setRest(first);
       this.el.mask.classList.add('is-open');
       if (v.words.length > 1) {
         this.reducedTimer = setInterval(() => {
@@ -162,40 +182,50 @@ export class Hero {
           this.setRest(v.words[this.index]);
         }, 3000);
       }
+    } else if (this.start === 'style') {
+      this.setPlain(first);
     } else {
-      this.setPlain(v.words[0]);
+      this.setEmpty(first);
     }
   }
 
   /* ---------- static states ---------- */
 
-  /** Opening frame: the phrase as ordinary headline text. No pill, no caret. */
-  setPlain(word) {
+  /** Shared set-up: every layer holds `word`, nothing is visible yet. */
+  prime(word) {
     const { slot, pill, blue, ink, sel, selText, caret } = this.el;
     const pw = this.pillWidth(word);
     gsap.set(slot, { width: this.slotWidth(word) });
     gsap.set(pill, { width: pw, autoAlpha: 0 });
     blue.textContent = word;
-    blue.style.setProperty('--reveal', '0px');
+    gsap.set(blue, { '--reveal': this.reveal(word) });
     ink.textContent = word;
-    gsap.set(ink, { autoAlpha: 1 });
+    gsap.set(ink, { autoAlpha: 0, '--reveal': this.reveal(word) });
     selText.textContent = word;
-    gsap.set(sel, { width: pw, '--sel-l': '100%', '--sel-r': '0%' });
+    gsap.set(sel, { width: pw, autoAlpha: 1, '--sel-l': '100%', '--sel-r': '0%' });
     gsap.set(caret, { x: pw + CARET_GAP, autoAlpha: 0 });
+    return pw;
+  }
+
+  /** "type" start: the space for the phrase is reserved, but nothing is written yet. */
+  setEmpty(word) {
+    this.prime(word);
+    gsap.set(this.el.ink, { autoAlpha: 1, '--reveal': '0px' });
+    gsap.set(this.el.caret, { x: PAD_L - CARET_W });
+  }
+
+  /** "style" start: the phrase as ordinary headline text. No pill, no caret. */
+  setPlain(word) {
+    this.prime(word);
+    gsap.set(this.el.ink, { autoAlpha: 1 });
+    gsap.set(this.el.caret, { x: 0 });
   }
 
   /** Resting frame, as drawn in Figma: cobalt phrase on the pale pill, caret at the end. */
   setRest(word) {
-    const { slot, pill, blue, ink, sel, selText, caret } = this.el;
-    const pw = this.pillWidth(word);
-    gsap.set(slot, { width: this.slotWidth(word) });
-    gsap.set(pill, { width: pw, autoAlpha: 1 });
-    blue.textContent = word;
-    blue.style.setProperty('--reveal', `${this.widths(word)[word.length] + 8}px`);
-    gsap.set(ink, { autoAlpha: 0 });
-    selText.textContent = word;
-    gsap.set(sel, { width: pw, '--sel-l': '100%', '--sel-r': '0%' });
-    gsap.set(caret, { x: pw + CARET_GAP, autoAlpha: 1 });
+    this.prime(word);
+    gsap.set(this.el.pill, { autoAlpha: 1 });
+    gsap.set(this.el.caret, { autoAlpha: 1 });
   }
 
   /* ---------- caret ---------- */
@@ -214,36 +244,119 @@ export class Hero {
     this.blinkTl = null;
   }
 
-  /* ---------- the sequence: select → remove → blink → type ---------- */
+  /* ---------- building blocks ---------- */
 
-  replace(fromWord, toWord, { fromPlain = false } = {}) {
+  /** Caret fades in with the logo flag popping out of it. */
+  caretIn(tl) {
+    const { caret, flag } = this.el;
+    tl.to(caret, { autoAlpha: 1, duration: 0.14, ease: 'none' }).fromTo(
+      flag,
+      { scale: 0 },
+      { scale: 1, duration: 0.42, ease: 'back.out(2.4)' },
+      '<',
+    );
+  }
+
+  /** Caret blinks `TIMING.blinks` times starting at `t`. Returns the time it ends. */
+  blinks(tl, t) {
+    const { caret } = this.el;
     const T = TIMING;
-    const { slot, pill, blue, ink, sel, selText, caret, flag } = this.el;
+    t += T.blink;
+    for (let i = 0; i < T.blinks; i++) {
+      tl.to(caret, { autoAlpha: 0, duration: 0.07, ease: 'none' }, t);
+      tl.to(caret, { autoAlpha: 1, duration: 0.07, ease: 'none' }, t + T.blink);
+      t += T.blink * 2;
+    }
+    return t;
+  }
+
+  /** Types `word` one character at a time from `t`; `onChar(i, time)` places each step. Returns the end time. */
+  keys(word, t, onChar) {
+    const T = TIMING;
+    const rand = seeded(word.length * 97 + word.charCodeAt(0));
+    for (let i = 1; i <= word.length; i++) {
+      onChar(i, t);
+      const ch = word[i - 1];
+      const next = word[i];
+      let step = T.key + (rand() - 0.5) * 2 * T.keyJitter;
+      if (ch === ' ' || ch === '-') step += 0.045; // a breath between words
+      if (next === '.') step += 0.07; // and before the full stop
+      t += step;
+    }
+    return t;
+  }
+
+  /** Plain text gets selected (start of the phrase → caret), then relaxes into the Figma frame. */
+  selectAndSettle(tl, word) {
+    const T = TIMING;
+    const { pill, blue, ink, sel, caret } = this.el;
+    const pw = this.pillWidth(word);
+    tl.addLabel('select')
+      .set(sel, { width: pw, autoAlpha: 1, '--sel-l': '0%', '--sel-r': '100%' }, 'select')
+      .to(sel, { '--sel-r': '0%', duration: T.select, ease: 'power2.inOut' }, 'select')
+      .to(caret, { x: pw + CARET_GAP, duration: T.select, ease: 'power2.inOut' }, 'select')
+      // Hidden behind the selection: swap the plain text for the styled one.
+      .set(ink, { autoAlpha: 0 })
+      .set(blue, { '--reveal': this.reveal(word) })
+      .set(pill, { width: pw, autoAlpha: 1 })
+      .to({}, { duration: T.selectHold })
+      .addLabel('settle')
+      .to(sel, { autoAlpha: 0, duration: T.settle, ease: 'power2.out' })
+      .set(sel, { '--sel-l': '100%', '--sel-r': '0%' })
+      .call(() => this.startBlink());
+  }
+
+  /* ---------- openings ---------- */
+
+  /** "type": caret arrives → blinks → types the phrase → selects it. */
+  openTyping(word) {
+    const T = TIMING;
+    const { ink, caret } = this.el;
+    const widths = this.widths(word);
+    const tl = gsap.timeline();
+    this.caretIn(tl);
+
+    let t = this.blinks(tl, tl.duration() - 0.1) + 0.06;
+    tl.addLabel('type', t);
+    t = this.keys(word, t, (i, at) => {
+      tl.set(ink, { '--reveal': this.reveal(word, i) }, at);
+      tl.to(caret, { x: PAD_L + widths[i] + TYPE_GAP, duration: 0.055, ease: 'power3.out' }, at);
+    });
+
+    tl.to({}, { duration: T.afterType }, t);
+    this.selectAndSettle(tl, word);
+    return tl;
+  }
+
+  /** "style": the written phrase is selected and restyled. Nothing is typed. */
+  openStyling(word) {
+    const tl = gsap.timeline();
+    this.caretIn(tl);
+    tl.to({}, { duration: 0.1 });
+    this.selectAndSettle(tl, word);
+    return tl;
+  }
+
+  /* ---------- swapping words (V2): select → remove → blink → type ---------- */
+
+  replace(fromWord, toWord) {
+    const T = TIMING;
+    const { slot, pill, blue, sel, selText, caret, flag } = this.el;
     const fromPill = this.pillWidth(fromWord);
-    const toWidths = this.widths(toWord);
-    const rand = seeded(toWord.length * 97 + toWord.charCodeAt(0));
     const tl = gsap.timeline();
 
-    // Set the scene. The caret arrives first if the phrase started as plain text.
     tl.call(() => {
       this.stopBlink();
       selText.textContent = fromWord;
-    }).set(sel, { width: fromPill, '--sel-l': '100%', '--sel-r': '0%' });
-    if (fromPlain) {
-      tl.set(caret, { x: fromPill + CARET_GAP })
-        .to(caret, { autoAlpha: 1, duration: 0.14, ease: 'none' })
-        .fromTo(flag, { scale: 0 }, { scale: 1, duration: 0.42, ease: 'back.out(2.4)' }, '<')
-        .to({}, { duration: 0.28 });
-    } else {
-      tl.set(caret, { autoAlpha: 1 });
-    }
+    })
+      .set(sel, { width: fromPill, autoAlpha: 1, '--sel-l': '100%', '--sel-r': '0%' })
+      .set(caret, { autoAlpha: 1 });
 
-    // 1. Select: the selection grows from the caret back to the start of the phrase.
+    // 1. Select: the selection grows from the caret back to the start of the word.
     tl.addLabel('select')
       .to(sel, { '--sel-l': '0%', duration: T.select, ease: 'power2.inOut' }, 'select')
       .to(caret, { x: 0, duration: T.select, ease: 'power2.inOut' }, 'select')
       // Hidden behind the selection: swap what sits underneath.
-      .set(ink, { autoAlpha: 0 })
       .set(pill, { width: 0, autoAlpha: 0 })
       .set(blue, { '--reveal': '0px' })
       .call(() => {
@@ -263,54 +376,43 @@ export class Hero {
       { scale: 1, duration: 0.5, ease: 'back.out(3)' },
       'blink',
     );
-    let t = tl.labels.blink + T.blink;
-    for (let i = 0; i < T.blinks; i++) {
-      tl.to(caret, { autoAlpha: 0, duration: 0.07, ease: 'none' }, t);
-      tl.to(caret, { autoAlpha: 1, duration: 0.07, ease: 'none' }, t + T.blink);
-      t += T.blink * 2;
-    }
+    let t = this.blinks(tl, tl.labels.blink) + 0.06;
 
     // 4. Type: one character at a time, the pill and caret following the text.
-    t += 0.06;
     tl.set(pill, { autoAlpha: 1 }, t);
-    for (let i = 1; i <= toWord.length; i++) {
-      const w = toWidths[i];
+    t = this.keys(toWord, t, (i, at) => {
       const pw = this.pillWidth(toWord, i);
-      tl.set(blue, { '--reveal': `${w + (i === toWord.length ? 8 : 0.5)}px` }, t);
-      tl.to(pill, { width: pw, duration: 0.055, ease: 'power3.out' }, t);
-      tl.to(caret, { x: pw + CARET_GAP, duration: 0.055, ease: 'power3.out' }, t);
-
-      const ch = toWord[i - 1];
-      const next = toWord[i];
-      let step = T.key + (rand() - 0.5) * 2 * T.keyJitter;
-      if (ch === ' ' || ch === '-') step += 0.045; // a breath between words
-      if (next === '.') step += 0.07; // and before the full stop
-      t += step;
-    }
+      tl.set(blue, { '--reveal': this.reveal(toWord, i) }, at);
+      tl.to(pill, { width: pw, duration: 0.055, ease: 'power3.out' }, at);
+      tl.to(caret, { x: pw + CARET_GAP, duration: 0.055, ease: 'power3.out' }, at);
+    });
 
     tl.call(() => this.startBlink(), null, t + 0.15);
     return tl;
   }
 
-  /* ---------- entrances ---------- */
+  /* ---------- entrance ---------- */
 
-  /** Headline rises in word by word, then the phrase is selected and typed. */
+  /** Headline rises in word by word, then the phrase opens in the chosen way. */
   intro() {
     if (this.reduceMotion) return gsap.timeline();
     const T = TIMING;
-    const v = this.version;
+    const first = this.version.words[0];
     const { mask, slot } = this.el;
-    const risers = [...this.h1.querySelectorAll('.w-in'), slot];
+    const typing = this.start !== 'style';
+    const risers = [...this.h1.querySelectorAll('.w-in')];
+    if (typing) mask.classList.add('is-open'); // nothing to mask: the slot starts empty
+    else risers.push(slot);
 
     const tl = gsap.timeline();
     tl.fromTo(
       risers,
       { yPercent: 118 },
       { yPercent: 0, duration: T.rise, ease: 'power4.out', stagger: T.riseStagger },
-    )
-      .call(() => mask.classList.add('is-open'))
-      .add(this.replace(v.words[0], v.words[0], { fromPlain: true }), `+=${T.beforeSelect}`)
-      .call(() => this.loop());
+    ).call(() => mask.classList.add('is-open'));
+    if (typing) tl.add(this.openTyping(first), '-=0.35');
+    else tl.add(this.openStyling(first), `+=${T.beforeStart}`);
+    tl.call(() => this.loop());
     return this.track(tl);
   }
 
